@@ -4,6 +4,7 @@ package bets
 
 import (
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -71,6 +72,7 @@ func TestBetRepositoryImplementations(t *testing.T) {
 		{"it should get all bets from a user", testGetAllBetsFromUser},
 		{"it should get all bets from a poll", testGetAllBetsFromPoll},
 		{"it should update a bet", testUpdateBet},
+		{"it should get all user stats", testGetAllUserStats},
 	}
 
 	// Loop through each implementation and run each test against it. Did this
@@ -196,5 +198,79 @@ func testUpdateBet(t *testing.T, repo BetRepository) {
 	}
 	if retrievedBet.BetStatus != Won {
 		t.Errorf("Expected bet status %v, but got %v", Won, retrievedBet.BetStatus)
+	}
+}
+
+func testGetAllUserStats(t *testing.T, repo BetRepository) {
+	// ARRANGE
+	var bets []bet
+	user1ID := "user1"
+	index := 0
+	for range 10 {
+		newBet := bet{
+			PollID:              "poll" + strconv.Itoa(index),
+			UserID:              user1ID,
+			SelectedOptionIndex: 0,
+			BetStatus:           Won,
+		}
+		bets = append(bets, newBet)
+		index++
+	}
+	for range 5 {
+		newBet := bet{
+			PollID:              "poll" + strconv.Itoa(index),
+			UserID:              user1ID,
+			SelectedOptionIndex: 0,
+			BetStatus:           Lost,
+		}
+		bets = append(bets, newBet)
+		index++
+	}
+
+	if len(bets) != 15 {
+		t.Fatalf("Expected 15 bets after setup but have %d instead", len(bets))
+	}
+
+	for _, bet := range bets {
+		err := repo.Save(&bet)
+		if err != nil {
+			t.Fatalf("Failed to save bets during setup: %v", err)
+		}
+	}
+
+	user1Bets, err := repo.GetBetsFromUser(user1ID)
+	if err != nil {
+		t.Fatalf("Failed to obtain bets after setup: %v", err)
+	}
+	if len(user1Bets) != 15 {
+		t.Fatalf("Expected 15 bets after setup but got %d instead", len(user1Bets))
+	}
+
+	// ACT
+	actualUserStats, err := repo.GetAllUserStats()
+	if err != nil {
+		t.Fatalf("Failed to get all user stats: %v", err)
+	}
+
+	// ASSERT
+	if len(actualUserStats) != 1 {
+		t.Fatalf("Expected 1 user stat but got %d", len(actualUserStats))
+	}
+
+	actualUserStat := actualUserStats[0]
+	if actualUserStat.UserID != user1ID {
+		t.Errorf("Expected %s but got %s", user1ID, actualUserStat.UserID)
+	}
+	if actualUserStat.Wins != 10 {
+		t.Errorf("Expected %d but got %d", 10, actualUserStat.Wins)
+	}
+	if actualUserStat.Losses != 5 {
+		t.Errorf("Expected %d but got %d", 5, actualUserStat.Losses)
+	}
+	if actualUserStat.Total != 15 {
+		t.Errorf("Expected %d but got %d", 15, actualUserStat.Total)
+	}
+	if actualUserStat.WinLossRatio != float64(2) {
+		t.Errorf("Expected %f but got %f", float64(2), actualUserStat.WinLossRatio)
 	}
 }

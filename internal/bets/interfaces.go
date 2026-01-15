@@ -15,6 +15,7 @@ type BetRepository interface {
 	GetBetsFromUser(userID string) ([]*bet, error)
 	GetBetsByPollId(pollID string) ([]*bet, error)
 	UpdateBet(bet *bet) error
+	GetAllUserStats() ([]*UserStats, error)
 }
 
 // Errors related to bets

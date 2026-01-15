@@ -48,5 +48,5 @@ type UserStats struct {
 	Wins         int
 	Losses       int
 	Total        int
-	WinLossRatio int
+	WinLossRatio float64
 }

@@ -60,4 +60,8 @@ func (repo memoryRepository) UpdateBet(bet *bet) error {
 	return nil
 }
 
+func (repo *memoryRepository) GetAllUserStats() ([]*UserStats, error) {
+	return nil, errors.New("unimplemented")
+}
+
 var _ BetRepository = (*memoryRepository)(nil)

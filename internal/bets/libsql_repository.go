@@ -136,3 +136,9 @@ func (repo libSQLRepository) UpdateBet(bet *bet) error {
 
 	return nil
 }
+
+func (repo *libSQLRepository) GetAllUserStats() ([]*UserStats, error) {
+	return nil, errors.New("unimplemented")
+}
+
+var _ BetRepository = (*libSQLRepository)(nil)
