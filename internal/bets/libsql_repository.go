@@ -138,7 +138,48 @@ func (repo libSQLRepository) UpdateBet(bet *bet) error {
 }
 
 func (repo *libSQLRepository) GetAllUserStats() ([]*UserStats, error) {
-	return nil, errors.New("unimplemented")
+	query := `
+		SELECT
+			user_id,
+			SUM(CASE WHEN bet_status = 1 THEN 1 ELSE 0 END) AS wins,
+			SUM(CASE WHEN bet_status = 2 THEN 1 ELSE 0 END) AS losses
+		FROM bets
+		GROUP BY user_id;
+	`
+	rows, queryErr := repo.db.Query(query)
+	if queryErr != nil {
+		return nil, fmt.Errorf("error while executing get all user stats: %w", queryErr)
+	}
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			fmtErr := fmt.Errorf("failed to close bets rows: %w", err)
+			fmt.Println(fmtErr)
+		}
+	}(rows)
+
+	var allUserStats []*UserStats
+	for rows.Next() {
+		userStat := &UserStats{}
+		if scanErr := rows.Scan(&userStat.UserID, &userStat.Wins, &userStat.Losses); scanErr != nil {
+			return nil, fmt.Errorf("error while scanning bet: %w", scanErr)
+		}
+
+		userStat.Total = userStat.Wins + userStat.Losses
+		if userStat.Total > 0 {
+			userStat.WinLossRatio = float64(userStat.Wins) / float64(userStat.Losses)
+		} else {
+			userStat.WinLossRatio = 0.0
+		}
+
+		allUserStats = append(allUserStats, userStat)
+
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("error while iterating over rows: %w", err)
+		}
+	}
+
+	return allUserStats, nil
 }
 
 var _ BetRepository = (*libSQLRepository)(nil)
