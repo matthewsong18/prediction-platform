@@ -11,6 +11,7 @@ import (
 	"betting-discord-bot/internal/polls"
 	"betting-discord-bot/internal/storage"
 	"betting-discord-bot/internal/users"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -19,7 +20,7 @@ var (
 	GuildID       = os.Getenv("GUILD_ID")
 	Token         = os.Getenv("TOKEN")
 	AppID         = os.Getenv("APP_ID")
-	DbPath        = os.Getenv("DB_PATH")
+	DBPath        = os.Getenv("DB_PATH")
 	EncryptionKey = os.Getenv("ENCRYPTION_KEY")
 )
 
@@ -40,10 +41,10 @@ func run() (err error) {
 	}
 
 	// Setup DB
-	db, initDbError := storage.InitializeDatabase(DbPath, EncryptionKey)
+	db, initDBError := storage.InitializeDatabase(DBPath, EncryptionKey)
 
-	if initDbError != nil {
-		return fmt.Errorf("failed to initialize database: %w", initDbError)
+	if initDBError != nil {
+		return fmt.Errorf("failed to initialize database: %w", initDBError)
 	}
 
 	log.Println("Database initialized successfully")
@@ -121,7 +122,7 @@ func validateEnvVariables() error {
 		log.Println("APP_ID environment variable is not set")
 		flagErr = true
 	}
-	if DbPath == "" {
+	if DBPath == "" {
 		log.Println("DB_PATH environment variable is not set")
 		flagErr = true
 	}
