@@ -61,7 +61,38 @@ func (repo memoryRepository) UpdateBet(bet *bet) error {
 }
 
 func (repo *memoryRepository) GetAllUserStats() ([]*UserStats, error) {
-	return nil, errors.New("unimplemented")
+	userWinLossStats := make(map[string][2]int)
+	for _, bet := range repo.betList {
+		win := 0
+		loss := 0
+		switch bet.BetStatus {
+		case Won:
+			win = 1
+		case Lost:
+			loss = 1
+		}
+		user := bet.UserID
+		if _, exists := userWinLossStats[user]; !exists {
+			userWinLossStats[user] = [2]int{win, loss}
+		} else {
+			existingStat := userWinLossStats[user]
+			userWinLossStats[user] = [2]int{existingStat[0] + win, existingStat[1] + loss}
+		}
+	}
+
+	allUserStats := make([]*UserStats, 0, 1)
+	for user, winLoss := range userWinLossStats {
+		newUserStat := &UserStats{
+			UserID:       user,
+			Wins:         winLoss[0],
+			Losses:       winLoss[1],
+			Total:        winLoss[0] + winLoss[1],
+			WinLossRatio: float64(winLoss[0]) / float64(winLoss[1]),
+		}
+		allUserStats = append(allUserStats, newUserStat)
+	}
+
+	return allUserStats, nil
 }
 
 var _ BetRepository = (*memoryRepository)(nil)
