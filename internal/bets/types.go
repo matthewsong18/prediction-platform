@@ -42,3 +42,11 @@ type BetKey struct {
 	PollID string
 	UserID string
 }
+
+type UserStats struct {
+	UserID       string
+	Wins         int
+	Losses       int
+	Total        int
+	WinLossRatio int
+}
