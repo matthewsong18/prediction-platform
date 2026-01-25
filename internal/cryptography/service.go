@@ -3,11 +3,16 @@ package cryptography
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 )
 
 type service struct {
-	gcm cipher.AEAD
+	gcm       cipher.AEAD
+	secretKey [32]byte
 }
 
 func NewService(secretKey [32]byte) (CryptoService, error) {
@@ -24,23 +29,38 @@ func NewService(secretKey [32]byte) (CryptoService, error) {
 	}
 
 	return &service{
-		gcm,
+		gcm:       gcm,
+		secretKey: secretKey,
 	}, nil
 }
 
 // Encrypt implements [CryptoService].
+// Returns a Base64 encoded string of the ciphertext.
 func (s *service) Encrypt(plaintext string) (string, error) {
 	ciphertext := s.gcm.Seal(nil, nil, []byte(plaintext), nil)
-	return string(ciphertext), nil
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
 // Decrypt implements [CryptoService].
-func (s *service) Decrypt(ciphertext string) (string, error) {
-	plaintext, err := s.gcm.Open(nil, nil, []byte(ciphertext), nil)
+// Expects a Base64 encoded string of the ciphertext.
+func (s *service) Decrypt(encodedCiphertext string) (string, error) {
+	ciphertext, err := base64.StdEncoding.DecodeString(encodedCiphertext)
+	if err != nil {
+		return "", fmt.Errorf("failed to decode base64 ciphertext: %w", err)
+	}
+
+	plaintext, err := s.gcm.Open(nil, nil, ciphertext, nil)
 	if err != nil {
 		return "", fmt.Errorf("failed to decrypt the text: %w", err)
 	}
 	return string(plaintext), nil
+}
+
+// GenerateBlindIndex implements [CryptoService].
+func (s *service) GenerateBlindIndex(plaintext string) string {
+	h := hmac.New(sha256.New, s.secretKey[:])
+	h.Write([]byte(plaintext))
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 var _ CryptoService = (*service)(nil)

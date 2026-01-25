@@ -133,3 +133,45 @@ func TestDelete(t *testing.T) {
 		t.Fatal("Expected error when getting deleted user, got none")
 	}
 }
+
+// TestEncryptionTransparency verifies that data is stored as ciphertext but retrieved as plaintext.
+func TestEncryptionTransparency(t *testing.T) {
+	db, teardown := setupTestDB(t)
+	t.Cleanup(teardown)
+	crypto := setupCryptoService(t)
+
+	repo := NewLibSQLRepository(db, crypto)
+
+	originalDiscordID := "real-discord-id"
+	user := &user{
+		ID:        "user-1",
+		DiscordID: originalDiscordID,
+	}
+
+	// 1. Save user via repository
+	if err := repo.Save(user); err != nil {
+		t.Fatalf("Failed to save user: %v", err)
+	}
+
+	// 2. Query the database directly to verify ciphertext
+	var dbDiscordID string
+	err := db.QueryRow("SELECT discord_id FROM users WHERE id = ?", user.ID).Scan(&dbDiscordID)
+	if err != nil {
+		t.Fatalf("Direct DB query failed: %v", err)
+	}
+
+	if dbDiscordID == originalDiscordID {
+		t.Errorf("CRITICAL: Data stored in DB is plaintext! Expected ciphertext, got %q", dbDiscordID)
+	}
+
+	// 3. Retrieve via repository to verify transparent decryption
+	retrieved, err := repo.GetByID(user.ID)
+	if err != nil {
+		t.Fatalf("Repository retrieval failed: %v", err)
+	}
+
+	if retrieved.DiscordID != originalDiscordID {
+		t.Errorf("Transparent decryption failed. Expected %q, got %q", originalDiscordID, retrieved.DiscordID)
+	}
+}
+

@@ -17,8 +17,34 @@ func NewLibSQLRepository(db *sql.DB, cryptoService cryptography.CryptoService) U
 }
 
 func (repo *libsqlRepository) Save(user *user) error {
-	query := `INSERT INTO users (id, discord_id) VALUES (?, ?)`
-	_, err := repo.db.Exec(query, user.ID, user.DiscordID)
+	// Encrypt sensitive data before saving
+	encryptedDiscordID, err := repo.cryptoService.Encrypt(user.DiscordID)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt discord_id: %w", err)
+	}
+
+	encryptedUsername, err := repo.cryptoService.Encrypt(user.Username)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt username: %w", err)
+	}
+
+	encryptedDisplayName, err := repo.cryptoService.Encrypt(user.DisplayName)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt display_name: %w", err)
+	}
+
+	// Generate blind index for searching
+	discordIDHash := repo.cryptoService.GenerateBlindIndex(user.DiscordID)
+
+	query := `INSERT INTO users (id, discord_id, discord_id_hash, username, display_name) 
+              VALUES (?, ?, ?, ?, ?)
+              ON CONFLICT(id) DO UPDATE SET 
+              discord_id = excluded.discord_id,
+              discord_id_hash = excluded.discord_id_hash,
+              username = excluded.username,
+              display_name = excluded.display_name`
+
+	_, err = repo.db.Exec(query, user.ID, encryptedDiscordID, discordIDHash, encryptedUsername, encryptedDisplayName)
 	if err != nil {
 		return fmt.Errorf("error saving user: %w", err)
 	}
@@ -27,38 +53,80 @@ func (repo *libsqlRepository) Save(user *user) error {
 }
 
 func (repo *libsqlRepository) GetByID(id string) (*user, error) {
-	query := `SELECT id, discord_id FROM users WHERE id = ?`
+	query := `SELECT id, discord_id, username, display_name FROM users WHERE id = ?`
 	row := repo.db.QueryRow(query, id)
 
-	var user user
-	err := row.Scan(&user.ID, &user.DiscordID)
+	var u user
+	var encDiscordID, encUsername, encDisplayName string
+	err := row.Scan(&u.ID, &encDiscordID, &encUsername, &encDisplayName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}
 		return nil, fmt.Errorf("error retrieving user: %w", err)
 	}
-	return &user, nil
+
+	// Decrypt sensitive data
+	u.DiscordID, err = repo.cryptoService.Decrypt(encDiscordID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt discord_id: %w", err)
+	}
+
+	u.Username, err = repo.cryptoService.Decrypt(encUsername)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt username: %w", err)
+	}
+
+	u.DisplayName, err = repo.cryptoService.Decrypt(encDisplayName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt display_name: %w", err)
+	}
+
+	return &u, nil
 }
 
 func (repo *libsqlRepository) GetByDiscordID(discordID string) (*user, error) {
-	query := `SELECT id, discord_id FROM users WHERE discord_id = ?`
-	row := repo.db.QueryRow(query, discordID)
+	// Search by blind index (hash)
+	discordIDHash := repo.cryptoService.GenerateBlindIndex(discordID)
 
-	var user user
-	err := row.Scan(&user.ID, &user.DiscordID)
+	query := `SELECT id, discord_id, username, display_name FROM users WHERE discord_id_hash = ?`
+	row := repo.db.QueryRow(query, discordIDHash)
+
+	var u user
+	var encDiscordID, encUsername, encDisplayName string
+	err := row.Scan(&u.ID, &encDiscordID, &encUsername, &encDisplayName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
 		}
 		return nil, fmt.Errorf("error retrieving user: %w", err)
 	}
-	return &user, nil
+
+	// Decrypt sensitive data
+	u.DiscordID, err = repo.cryptoService.Decrypt(encDiscordID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt discord_id: %w", err)
+	}
+
+	u.Username, err = repo.cryptoService.Decrypt(encUsername)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt username: %w", err)
+	}
+
+	u.DisplayName, err = repo.cryptoService.Decrypt(encDisplayName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt display_name: %w", err)
+	}
+
+	return &u, nil
 }
 
 func (repo *libsqlRepository) Delete(discordID string) error {
-	query := "DELETE FROM users WHERE discord_id = ?"
-	result, err := repo.db.Exec(query, discordID)
+	// Search by blind index (hash)
+	discordIDHash := repo.cryptoService.GenerateBlindIndex(discordID)
+
+	query := "DELETE FROM users WHERE discord_id_hash = ?"
+	result, err := repo.db.Exec(query, discordIDHash)
 	if err != nil {
 		return fmt.Errorf("error deleting user with discord_id %s: %w", discordID, err)
 	}

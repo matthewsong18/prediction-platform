@@ -8,7 +8,7 @@ This plan outlines the steps to implement transparent encryption for sensitive u
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Configuration' (Protocol in workflow.md) (4639e1c)
 
 ## Phase 2: Transparent Encryption Logic
-- [ ] Task: Implement Encryption/Decryption in `LibSQLRepository`
+- [~] Task: Implement Encryption/Decryption in `LibSQLRepository`
     - [ ] **Red Phase:** Write failing tests in `internal/users/libsql_repository_test.go` that check if data is encrypted in the database but returned as plaintext.
     - [ ] **Green Phase:** Modify `Save` and `Find` methods in `internal/users/libsql_repository.go` to use `cryptoService.Encrypt` and `cryptoService.Decrypt` for `DiscordID`, `Username`, and `DisplayName`.
     - [ ] Verify that internal domain logic remains unchanged and tests still pass.
