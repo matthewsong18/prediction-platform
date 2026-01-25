@@ -1,10 +1,31 @@
 package cryptography
 
+import (
+	"crypto/aes"
+	"crypto/cipher"
+	"log"
+)
+
 type service struct {
+	gcm cipher.AEAD
 }
 
 func NewService(secretKey [32]byte) (CryptoService, error) {
-	panic("unimplemented")
+	// Uses AES-GCM for reversible, authenticated encryption. This protects user IDs
+	// at rest while allowing decryption for display features like the leaderboard,
+	// and ensures data integrity (tamper-proofing) by default.
+	block, err := aes.NewCipher(secretKey[:])
+	if err != nil {
+		log.Fatal(err)
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return &service{
+		gcm,
+	}, nil
 }
 
 // Encrypt implements [CryptoService].
