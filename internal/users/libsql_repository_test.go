@@ -143,35 +143,51 @@ func TestEncryptionTransparency(t *testing.T) {
 	repo := NewLibSQLRepository(db, crypto)
 
 	originalDiscordID := "real-discord-id"
-	user := &user{
-		ID:        "user-1",
-		DiscordID: originalDiscordID,
+	originalUsername := "testuser"
+	originalDisplayName := "Test User"
+	u := &user{
+		ID:          "user-1",
+		DiscordID:   originalDiscordID,
+		Username:    originalUsername,
+		DisplayName: originalDisplayName,
 	}
 
 	// 1. Save user via repository
-	if err := repo.Save(user); err != nil {
+	if err := repo.Save(u); err != nil {
 		t.Fatalf("Failed to save user: %v", err)
 	}
 
 	// 2. Query the database directly to verify ciphertext
-	var dbDiscordID string
-	err := db.QueryRow("SELECT discord_id FROM users WHERE id = ?", user.ID).Scan(&dbDiscordID)
+	var dbDiscordID, dbUsername, dbDisplayName string
+	err := db.QueryRow("SELECT discord_id, username, display_name FROM users WHERE id = ?", u.ID).Scan(&dbDiscordID, &dbUsername, &dbDisplayName)
 	if err != nil {
 		t.Fatalf("Direct DB query failed: %v", err)
 	}
 
 	if dbDiscordID == originalDiscordID {
-		t.Errorf("CRITICAL: Data stored in DB is plaintext! Expected ciphertext, got %q", dbDiscordID)
+		t.Errorf("CRITICAL: DiscordID stored in DB is plaintext! Expected ciphertext, got %q", dbDiscordID)
+	}
+	if dbUsername == originalUsername {
+		t.Errorf("CRITICAL: Username stored in DB is plaintext! Expected ciphertext, got %q", dbUsername)
+	}
+	if dbDisplayName == originalDisplayName {
+		t.Errorf("CRITICAL: DisplayName stored in DB is plaintext! Expected ciphertext, got %q", dbDisplayName)
 	}
 
 	// 3. Retrieve via repository to verify transparent decryption
-	retrieved, err := repo.GetByID(user.ID)
+	retrieved, err := repo.GetByID(u.ID)
 	if err != nil {
 		t.Fatalf("Repository retrieval failed: %v", err)
 	}
 
 	if retrieved.DiscordID != originalDiscordID {
-		t.Errorf("Transparent decryption failed. Expected %q, got %q", originalDiscordID, retrieved.DiscordID)
+		t.Errorf("Transparent decryption for DiscordID failed. Expected %q, got %q", originalDiscordID, retrieved.DiscordID)
+	}
+	if retrieved.Username != originalUsername {
+		t.Errorf("Transparent decryption for Username failed. Expected %q, got %q", originalUsername, retrieved.Username)
+	}
+	if retrieved.DisplayName != originalDisplayName {
+		t.Errorf("Transparent decryption for DisplayName failed. Expected %q, got %q", originalDisplayName, retrieved.DisplayName)
 	}
 }
 

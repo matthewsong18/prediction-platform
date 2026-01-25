@@ -12,6 +12,6 @@ This plan outlines the steps to implement transparent encryption for sensitive u
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Transparent Encryption Logic' (Protocol in workflow.md) (651a97c)
 
 ## Phase 3: Migration & Verification
-- [ ] Task: Verify data at rest security
+- [~] Task: Verify data at rest security
     - [ ] Write a script or temporary test that directly queries the LibSQL database (bypassing the repository's decryption) to confirm that PII fields contain ciphertext.
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Migration & Verification' (Protocol in workflow.md)
