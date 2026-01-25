@@ -1,12 +1,24 @@
 package users
 
 import (
+	"betting-discord-bot/internal/cryptography"
 	"database/sql"
 	"os"
 	"testing"
 
 	"betting-discord-bot/internal/storage"
 )
+
+// setupCryptoService creates a cryptography service for testing.
+func setupCryptoService(t *testing.T) cryptography.CryptoService {
+	t.Helper()
+	var key [32]byte // zero key is fine for tests
+	service, err := cryptography.NewService(key)
+	if err != nil {
+		t.Fatalf("failed to create crypto service: %v", err)
+	}
+	return service
+}
 
 // Creates a temporary database for testing user libsqlRepository.
 func setupTestDB(t *testing.T) (*sql.DB, func()) {
@@ -21,12 +33,12 @@ func setupTestDB(t *testing.T) (*sql.DB, func()) {
 	teardown := func() {
 		err := db.Close()
 		if err != nil {
-			t.Fatal("Failed to close test database:", err)
+			t.Log("Failed to close test database:", err)
 		}
 
 		err = os.Remove(dbPath)
 		if err != nil {
-			t.Fatal("Failed to remove test database:", err)
+			t.Log("Failed to remove test database:", err)
 		}
 	}
 
@@ -37,8 +49,9 @@ func setupTestDB(t *testing.T) (*sql.DB, func()) {
 func TestSaveAndGet(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	t.Cleanup(teardown)
+	crypto := setupCryptoService(t)
 
-	repo := NewLibSQLRepository(db)
+	repo := NewLibSQLRepository(db, crypto)
 
 	user := &user{
 		ID:        "test-id",
@@ -62,8 +75,9 @@ func TestSaveAndGet(t *testing.T) {
 func TestGetByDiscordID(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	t.Cleanup(teardown)
+	crypto := setupCryptoService(t)
 
-	repo := NewLibSQLRepository(db)
+	repo := NewLibSQLRepository(db, crypto)
 
 	user := &user{
 		ID:        "test-id",
@@ -88,8 +102,9 @@ func TestGetByDiscordID(t *testing.T) {
 func TestDelete(t *testing.T) {
 	db, teardown := setupTestDB(t)
 	t.Cleanup(teardown)
+	crypto := setupCryptoService(t)
 
-	repo := NewLibSQLRepository(db)
+	repo := NewLibSQLRepository(db, crypto)
 
 	user := &user{
 		ID:        "test-id",

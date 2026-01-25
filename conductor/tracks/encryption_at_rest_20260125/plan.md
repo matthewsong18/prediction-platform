@@ -7,7 +7,7 @@ This plan outlines the steps to implement transparent encryption for sensitive u
     - [ ] Update `cmd/bot/main.go` or a configuration utility to read `ENCRYPTION_KEY` from environment variables.
     - [ ] Validate that the key is a valid 32-byte hex-encoded string.
     - [ ] Ensure the application fails fast with a clear error message if the key is missing or invalid.
-- [ ] Task: Inject `cryptography.Service` into `users.LibSQLRepository`
+- [~] Task: Inject `cryptography.Service` into `users.LibSQLRepository`
     - [ ] Update `internal/users/interfaces.go` or factory methods to accept `cryptography.CryptoService`.
     - [ ] Update dependency injection in `cmd/bot/main.go` to wire up the crypto service to the user repository.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Configuration' (Protocol in workflow.md)

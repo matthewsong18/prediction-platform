@@ -1,17 +1,19 @@
 package users
 
 import (
+	"betting-discord-bot/internal/cryptography"
 	"database/sql"
 	"errors"
 	"fmt"
 )
 
 type libsqlRepository struct {
-	db *sql.DB
+	db            *sql.DB
+	cryptoService cryptography.CryptoService
 }
 
-func NewLibSQLRepository(db *sql.DB) UserRepository {
-	return &libsqlRepository{db}
+func NewLibSQLRepository(db *sql.DB, cryptoService cryptography.CryptoService) UserRepository {
+	return &libsqlRepository{db, cryptoService}
 }
 
 func (repo *libsqlRepository) Save(user *user) error {

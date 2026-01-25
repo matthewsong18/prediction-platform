@@ -8,9 +8,11 @@ import (
 	"os/signal"
 
 	"betting-discord-bot/internal/bets"
+	"betting-discord-bot/internal/cryptography"
 	"betting-discord-bot/internal/polls"
 	"betting-discord-bot/internal/storage"
 	"betting-discord-bot/internal/users"
+	"encoding/hex"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -38,7 +40,10 @@ func run() (err error) {
 	log.Println("Database initialized successfully")
 
 	// Init services
-	pollService, betService, userService := initServices(db)
+	pollService, betService, userService, err := initServices(db, config)
+	if err != nil {
+		return fmt.Errorf("failed to initialize services: %w", err)
+	}
 
 	// Setup discord bot
 	if err := setupDiscordBot(discordSession, config, pollService, betService, userService); err != nil {
@@ -86,14 +91,24 @@ func setupDiscordBot(discordSession *discordgo.Session, config *Config, pollServ
 	return nil
 }
 
-func initServices(db *sql.DB) (polls.PollService, bets.BetService, users.UserService) {
+func initServices(db *sql.DB, config *Config) (polls.PollService, bets.BetService, users.UserService, error) {
+	// Initialize cryptography service
+	keyBytes, _ := hex.DecodeString(config.EncryptionKey)
+	var key [32]byte
+	copy(key[:], keyBytes)
+
+	cryptoService, err := cryptography.NewService(key)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to initialize crypto service: %w", err)
+	}
+
 	pollRepo := polls.NewLibSQLRepository(db)
 	pollService := polls.NewService(pollRepo)
 	betRepo := bets.NewLibSQLRepository(db)
 	betService := bets.NewService(pollService, betRepo)
-	userRepo := users.NewLibSQLRepository(db)
+	userRepo := users.NewLibSQLRepository(db, cryptoService)
 	userService := users.NewService(userRepo, betService)
-	return pollService, betService, userService
+	return pollService, betService, userService, nil
 }
 
 func main() {
