@@ -49,3 +49,32 @@ func TestEncryptDecrypt(t *testing.T) {
 		t.Errorf("Expected decrypted text to match original. Got %q, want %q", decrypted, original)
 	}
 }
+
+func TestSecurity_NonceRandomization(t *testing.T) {
+	var key [32]byte
+	if _, err := io.ReadFull(rand.Reader, key[:]); err != nil {
+		log.Fatal(err)
+	}
+
+	service, err := NewService(key)
+	if err != nil {
+		t.Fatalf("Failed to create service: %v", err)
+	}
+
+	plaintext := "sensitive data"
+
+	// Encrypt twice
+	c1, err := service.Encrypt(plaintext)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c2, err := service.Encrypt(plaintext)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if c1 == c2 {
+		t.Fatal("CRITICAL: Ciphertext is deterministic! Nonce is likely being reused. Encryption is insecure.")
+	}
+}
