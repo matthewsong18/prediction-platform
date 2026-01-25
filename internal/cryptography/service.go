@@ -18,7 +18,7 @@ func NewService(secretKey [32]byte) (CryptoService, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	gcm, err := cipher.NewGCM(block)
+	gcm, err := cipher.NewGCMWithRandomNonce(block)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,12 +30,17 @@ func NewService(secretKey [32]byte) (CryptoService, error) {
 
 // Encrypt implements [CryptoService].
 func (s *service) Encrypt(plaintext string) (string, error) {
-	panic("unimplemented")
+	ciphertext := s.gcm.Seal(nil, nil, []byte(plaintext), nil)
+	return string(ciphertext), nil
 }
 
 // Decrypt implements [CryptoService].
 func (s *service) Decrypt(ciphertext string) (string, error) {
-	panic("unimplemented")
+	plaintext, err := s.gcm.Open(nil, nil, []byte(ciphertext), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return string(plaintext), nil
 }
 
 var _ CryptoService = (*service)(nil)
