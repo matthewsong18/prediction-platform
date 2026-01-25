@@ -19,28 +19,33 @@ func TestNewService(t *testing.T) {
 	}
 }
 
-// func TestEncryptDecrypt(t *testing.T) {
-// 	service, err := NewService()
-// 	if err != nil {
-// 		t.Fatalf("Failed to create service: %v", err)
-// 	}
+func TestEncryptDecrypt(t *testing.T) {
+	var key [32]byte
+	if _, err := io.ReadFull(rand.Reader, key[:]); err != nil {
+		log.Fatal(err)
+	}
 
-// 	original := "Hello, World!"
-// 	encrypted, err := service.Encrypt(original)
-// 	if err != nil {
-// 		t.Fatalf("Encrypt failed: %v", err)
-// 	}
+	service, err := NewService(key)
+	if err != nil {
+		t.Fatalf("Failed to create service: %v", err)
+	}
 
-// 	if encrypted == original {
-// 		t.Error("Encrypted text should not match original text")
-// 	}
+	original := "Hello, World!"
+	encrypted, err := service.Encrypt(original)
+	if err != nil {
+		t.Fatalf("Encrypt failed: %v", err)
+	}
 
-// 	decrypted, err := service.Decrypt(encrypted)
-// 	if err != nil {
-// 		t.Fatalf("Decrypt failed: %v", err)
-// 	}
+	if encrypted == original {
+		t.Error("Encrypted text should not match original text")
+	}
 
-// 	if decrypted != original {
-// 		t.Errorf("Expected decrypted text to match original. Got %q, want %q", decrypted, original)
-// 	}
-// }
+	decrypted, err := service.Decrypt(encrypted)
+	if err != nil {
+		t.Fatalf("Decrypt failed: %v", err)
+	}
+
+	if decrypted != original {
+		t.Errorf("Expected decrypted text to match original. Got %q, want %q", decrypted, original)
+	}
+}
