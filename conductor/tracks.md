@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: Implement privacy-focused data encryption at rest for sensitive user fields.**
+- [x] **Track: Implement privacy-focused data encryption at rest for sensitive user fields.**
 *Link: [./tracks/encryption_at_rest_20260125/](./tracks/encryption_at_rest_20260125/)*
