@@ -3,7 +3,7 @@
 This plan outlines the steps to implement transparent encryption for sensitive user data in the `users` repository using the `cryptography` service.
 
 ## Phase 1: Infrastructure & Configuration
-- [~] Task: Configure `ENCRYPTION_KEY` loading
+- [x] Task: Configure `ENCRYPTION_KEY` loading (89d15b4)
     - [ ] Update `cmd/bot/main.go` or a configuration utility to read `ENCRYPTION_KEY` from environment variables.
     - [ ] Validate that the key is a valid 32-byte hex-encoded string.
     - [ ] Ensure the application fails fast with a clear error message if the key is missing or invalid.
