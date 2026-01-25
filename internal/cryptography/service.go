@@ -3,7 +3,7 @@ package cryptography
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"log"
+	"fmt"
 )
 
 type service struct {
@@ -16,11 +16,11 @@ func NewService(secretKey [32]byte) (CryptoService, error) {
 	// and ensures data integrity (tamper-proofing) by default.
 	block, err := aes.NewCipher(secretKey[:])
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to create aes cipher block: %w", err)
 	}
 	gcm, err := cipher.NewGCMWithRandomNonce(block)
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to wrap block with gcm: %w", err)
 	}
 
 	return &service{
@@ -38,7 +38,7 @@ func (s *service) Encrypt(plaintext string) (string, error) {
 func (s *service) Decrypt(ciphertext string) (string, error) {
 	plaintext, err := s.gcm.Open(nil, nil, []byte(ciphertext), nil)
 	if err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("failed to decrypt the text: %w", err)
 	}
 	return string(plaintext), nil
 }
