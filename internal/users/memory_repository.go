@@ -36,7 +36,12 @@ func (repo *memoryRepository) AddIdentity(userID, provider, externalID string) e
 	if _, exists := repo.users[userID]; !exists {
 		return errors.New("user not found")
 	}
+
 	key := provider + ":" + externalID
+	if _, exists := repo.identities[key]; exists {
+		return errors.New("identity has been taken")
+	}
+
 	repo.identities[key] = userID
 	return nil
 }
