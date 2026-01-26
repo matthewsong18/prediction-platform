@@ -36,9 +36,9 @@ func (repo *libsqlRepository) Save(user *user) error {
 	// Generate blind index for searching
 	discordIDHash := repo.cryptoService.GenerateBlindIndex(user.DiscordID)
 
-	query := `INSERT INTO users (id, discord_id, discord_id_hash, username, display_name) 
+	query := `INSERT INTO users (id, discord_id, discord_id_hash, username, display_name)
               VALUES (?, ?, ?, ?, ?)
-              ON CONFLICT(id) DO UPDATE SET 
+              ON CONFLICT(id) DO UPDATE SET
               discord_id = excluded.discord_id,
               discord_id_hash = excluded.discord_id_hash,
               username = excluded.username,
@@ -92,9 +92,9 @@ func (repo *libsqlRepository) GetByDiscordID(discordID string) (*user, error) {
 	query := `SELECT id, discord_id, username, display_name FROM users WHERE discord_id_hash = ?`
 	row := repo.db.QueryRow(query, discordIDHash)
 
-	var u user
-	var encDiscordID, encUsername, encDisplayName string
-	err := row.Scan(&u.ID, &encDiscordID, &encUsername, &encDisplayName)
+	var retrievedUser user
+	var encryptedDiscordID, encryptedUsername, encryptedDisplayName string
+	err := row.Scan(&retrievedUser.ID, &encryptedDiscordID, &encryptedUsername, &encryptedDisplayName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
@@ -103,22 +103,26 @@ func (repo *libsqlRepository) GetByDiscordID(discordID string) (*user, error) {
 	}
 
 	// Decrypt sensitive data
-	u.DiscordID, err = repo.cryptoService.Decrypt(encDiscordID)
+	retrievedUser.DiscordID, err = repo.cryptoService.Decrypt(encryptedDiscordID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt discord_id: %w", err)
 	}
 
-	u.Username, err = repo.cryptoService.Decrypt(encUsername)
+	retrievedUser.Username, err = repo.cryptoService.Decrypt(encryptedUsername)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt username: %w", err)
 	}
 
-	u.DisplayName, err = repo.cryptoService.Decrypt(encDisplayName)
+	retrievedUser.DisplayName, err = repo.cryptoService.Decrypt(encryptedDisplayName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt display_name: %w", err)
 	}
 
-	return &u, nil
+	if retrievedUser.DiscordID != discordID {
+		return nil, ErrUserNotFound
+	}
+
+	return &retrievedUser, nil
 }
 
 func (repo *libsqlRepository) Delete(discordID string) error {
