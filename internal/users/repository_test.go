@@ -91,8 +91,10 @@ func TestUserRepositoryImplementations(t *testing.T) {
 // testSaveAndGet tests saving a user and retrieving it by ID.
 func testSaveAndGet(t *testing.T, repo UserRepository) {
 	user := &user{
-		ID:        "test-id",
-		DiscordID: "test-discord-id",
+		ID:          "test-id",
+		DiscordID:   "test-discord-id",
+		Username:    "test-username",
+		DisplayName: "test-display-name",
 	}
 
 	if err := repo.Save(user); err != nil {
@@ -106,6 +108,14 @@ func testSaveAndGet(t *testing.T, repo UserRepository) {
 
 	if savedUser.DiscordID != user.DiscordID {
 		t.Errorf("Expected DiscordID %s, got %s", user.DiscordID, savedUser.DiscordID)
+	}
+
+	if savedUser.Username != user.Username {
+		t.Errorf("Expected Username %s, got %s", user.Username, savedUser.Username)
+	}
+
+	if savedUser.DisplayName != user.DisplayName {
+		t.Errorf("Expected DisplayName %s, got %s", user.DisplayName, savedUser.DisplayName)
 	}
 }
 
