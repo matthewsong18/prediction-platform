@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"betting-discord-bot/internal/storage"
+
 	"github.com/google/uuid"
 )
 
@@ -49,6 +50,7 @@ func setupInMemory(t *testing.T) (PollRepository, func()) {
 }
 
 func TestPollRepositoryImplementations(t *testing.T) {
+	t.Parallel()
 	implementations := []struct {
 		name  string
 		setup func(t *testing.T) (PollRepository, func())
@@ -69,8 +71,12 @@ func TestPollRepositoryImplementations(t *testing.T) {
 
 	for _, impl := range implementations {
 		t.Run(impl.name, func(t *testing.T) {
+			t.Parallel()
+
 			for _, tc := range testCases {
 				t.Run(tc.name, func(t *testing.T) {
+					t.Parallel()
+
 					repo, cleanup := impl.setup(t)
 					t.Cleanup(cleanup)
 

@@ -76,7 +76,10 @@ func buildSchema() []string {
 		);`,
 		`CREATE TABLE IF NOT EXISTS users (
 			id TEXT PRIMARY KEY,
-			discord_id TEXT UNIQUE
+			discord_id TEXT,
+			discord_id_hash TEXT UNIQUE,
+			username TEXT,
+			display_name TEXT
 		);`,
 	}
 }

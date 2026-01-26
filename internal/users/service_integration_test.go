@@ -63,6 +63,7 @@ func getTestBets(wins int, losses int, pending int) []bets.Bet {
 }
 
 func TestGetUserWinLoss(t *testing.T) {
+	t.Parallel()
 	betsArgument := []struct {
 		name    string
 		betList []bets.Bet
@@ -92,6 +93,7 @@ func TestGetUserWinLoss(t *testing.T) {
 
 	for _, tc := range betsArgument {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			testWinLoss(t, tc.betList, tc.winLoss)
 		})
 	}

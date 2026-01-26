@@ -12,13 +12,17 @@ type Bot struct {
 	PollService    polls.PollService
 	BetService     bets.BetService
 	UserService    users.UserService
+	AppID          string
+	GuildID        string
 }
 
-func NewBot(session *discordgo.Session, pollService polls.PollService, betService bets.BetService, userService users.UserService) *Bot {
+func NewBot(session *discordgo.Session, pollService polls.PollService, betService bets.BetService, userService users.UserService, appID, guildID string) *Bot {
 	return &Bot{
 		DiscordSession: session,
 		PollService:    pollService,
 		BetService:     betService,
 		UserService:    userService,
+		AppID:          appID,
+		GuildID:        guildID,
 	}
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -15,9 +14,7 @@ func (bot *Bot) RegisterCommands() error {
 		},
 	}
 
-	AppID = os.Getenv("APP_ID")
-	GuildID = os.Getenv("GUILD_ID")
-	_, err := bot.DiscordSession.ApplicationCommandBulkOverwrite(AppID, GuildID, commands)
+	_, err := bot.DiscordSession.ApplicationCommandBulkOverwrite(bot.AppID, bot.GuildID, commands)
 	if err != nil {
 		log.Printf("Error overwriting commands: %v", err)
 		return err
