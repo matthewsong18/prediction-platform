@@ -11,6 +11,7 @@ import (
 	"betting-discord-bot/internal/bets"
 	"betting-discord-bot/internal/polls"
 	"betting-discord-bot/internal/users"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -21,7 +22,7 @@ func handleBet(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, p
 			if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
-					Content: fmt.Sprint("You have already bet on this poll."),
+					Content: "You have already bet on this poll.",
 					Flags:   discordgo.MessageFlagsEphemeral,
 				},
 			}); err != nil {
@@ -33,7 +34,7 @@ func handleBet(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, p
 			if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
-					Content: fmt.Sprint("This poll is closed. You cannot place a bet."),
+					Content: "This poll is closed. You cannot place a bet.",
 					Flags:   discordgo.MessageFlagsEphemeral,
 				},
 			}); err != nil {
@@ -51,7 +52,7 @@ func handleBet(s *discordgo.Session, i *discordgo.InteractionCreate, bot *Bot, p
 	if err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content: fmt.Sprint("Bet submitted"),
+			Content: "Bet submitted",
 			Flags:   discordgo.MessageFlagsEphemeral,
 		},
 	}); err != nil {

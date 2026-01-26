@@ -93,7 +93,10 @@ func setupDiscordBot(discordSession *discordgo.Session, config *Config, pollServ
 
 func initServices(db *sql.DB, config *Config) (polls.PollService, bets.BetService, users.UserService, error) {
 	// Initialize cryptography service
-	keyBytes, _ := hex.DecodeString(config.EncryptionKey)
+	keyBytes, err := hex.DecodeString(config.EncryptionKey)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to decode encryption key")
+	}
 	var key [32]byte
 	copy(key[:], keyBytes)
 
