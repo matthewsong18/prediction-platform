@@ -9,6 +9,7 @@ import (
 )
 
 func TestCreateUser(t *testing.T) {
+	t.Parallel()
 	pollMemoryRepo := polls.NewMemoryRepository()
 	pollService := polls.NewService(pollMemoryRepo)
 	betService := bets.NewService(pollService, nil)
@@ -26,6 +27,7 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestGetUserByDiscordID(t *testing.T) {
+	t.Parallel()
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, nil)
 
@@ -45,6 +47,7 @@ func TestGetUserByDiscordID(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
+	t.Parallel()
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, nil)
 

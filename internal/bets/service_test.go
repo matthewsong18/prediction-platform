@@ -8,6 +8,7 @@ import (
 )
 
 func TestCreateBet(t *testing.T) {
+	t.Parallel()
 	pollMemoryRepo := polls.NewMemoryRepository()
 	pollService := polls.NewService(pollMemoryRepo)
 	betRepo := NewMemoryRepository()
@@ -41,6 +42,7 @@ func TestCreateBet(t *testing.T) {
 }
 
 func TestInvalidOption(t *testing.T) {
+	t.Parallel()
 	pollMemoryRepo := polls.NewMemoryRepository()
 	pollService := polls.NewService(pollMemoryRepo)
 	betService := NewService(pollService, nil)
@@ -59,6 +61,7 @@ func TestInvalidOption(t *testing.T) {
 }
 
 func TestPreventingMultipleBetsPerPoll(t *testing.T) {
+	t.Parallel()
 	pollMemoryRepo := polls.NewMemoryRepository()
 	pollService := polls.NewService(pollMemoryRepo)
 	betRepo := NewMemoryRepository()
@@ -88,6 +91,7 @@ func TestPreventingMultipleBetsPerPoll(t *testing.T) {
 }
 
 func TestCannotBetOnClosedPoll(t *testing.T) {
+	t.Parallel()
 	pollMemoryRepo := polls.NewMemoryRepository()
 	pollService := polls.NewService(pollMemoryRepo)
 	betService := NewService(pollService, nil)
@@ -114,6 +118,7 @@ func TestCannotBetOnClosedPoll(t *testing.T) {
 }
 
 func TestGetBetOutcome(t *testing.T) {
+	t.Parallel()
 	// Check if the bet outcome is correctly retrieved
 
 	pollMemoryRepo := polls.NewMemoryRepository()
@@ -166,6 +171,7 @@ func TestGetBetOutcome(t *testing.T) {
 }
 
 func TestGettingUserBets(t *testing.T) {
+	t.Parallel()
 	pollMemoryRepo := polls.NewMemoryRepository()
 	pollService := polls.NewService(pollMemoryRepo)
 	betRepo := NewMemoryRepository()

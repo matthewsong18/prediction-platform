@@ -8,6 +8,7 @@ import (
 )
 
 func TestNewService(t *testing.T) {
+	t.Parallel()
 	var key [32]byte
 	if _, err := io.ReadFull(rand.Reader, key[:]); err != nil {
 		log.Fatal(err)
@@ -20,6 +21,7 @@ func TestNewService(t *testing.T) {
 }
 
 func TestEncryptDecrypt(t *testing.T) {
+	t.Parallel()
 	var key [32]byte
 	if _, err := io.ReadFull(rand.Reader, key[:]); err != nil {
 		log.Fatal(err)
@@ -51,6 +53,7 @@ func TestEncryptDecrypt(t *testing.T) {
 }
 
 func TestSecurity_NonceRandomization(t *testing.T) {
+	t.Parallel()
 	var key [32]byte
 	if _, err := io.ReadFull(rand.Reader, key[:]); err != nil {
 		log.Fatal(err)

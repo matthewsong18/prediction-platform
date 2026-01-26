@@ -55,6 +55,7 @@ func setupCryptoService(t *testing.T) cryptography.CryptoService {
 }
 
 func TestUserRepositoryImplementations(t *testing.T) {
+	t.Parallel()
 	implementations := []struct {
 		name  string
 		setup func(t *testing.T) (UserRepository, func())
@@ -71,8 +72,12 @@ func TestUserRepositoryImplementations(t *testing.T) {
 
 	for _, implementation := range implementations {
 		t.Run(implementation.name, func(t *testing.T) {
+			t.Parallel()
+
 			for name, test := range tests {
 				t.Run(name, func(t *testing.T) {
+					t.Parallel()
+
 					repo, teardown := implementation.setup(t)
 					t.Cleanup(teardown)
 

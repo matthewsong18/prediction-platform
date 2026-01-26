@@ -52,6 +52,7 @@ func setupInMemory(t *testing.T) (BetRepository, func()) {
 
 // TestBetRepositoryImplementations is the main entry point for testing all BetRepository implementations.
 func TestBetRepositoryImplementations(t *testing.T) {
+	t.Parallel()
 	// This table defines all the implementations we want to test.
 	implementations := []struct {
 		name  string
@@ -77,8 +78,12 @@ func TestBetRepositoryImplementations(t *testing.T) {
 	// once per implementation.
 	for _, impl := range implementations {
 		t.Run(impl.name, func(t *testing.T) {
+			t.Parallel()
+
 			for _, tc := range testCases {
 				t.Run(tc.name, func(t *testing.T) {
+					t.Parallel()
+
 					repo, cleanup := impl.setup(t)
 					t.Cleanup(cleanup)
 
