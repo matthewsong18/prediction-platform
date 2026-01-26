@@ -66,7 +66,7 @@ func TestUserRepositoryImplementations(t *testing.T) {
 
 	tests := map[string]func(t *testing.T, repo UserRepository){
 		"it should save then get a user":           testSaveAndGet,
-		"it should get a user by their discord ID": testGetByDiscordID,
+		"it should get a user by their external ID": testGetByExternalID,
 		"it should delete a user":                  testDelete,
 	}
 
@@ -92,7 +92,6 @@ func TestUserRepositoryImplementations(t *testing.T) {
 func testSaveAndGet(t *testing.T, repo UserRepository) {
 	user := &user{
 		ID:          "test-id",
-		DiscordID:   "test-discord-id",
 		Username:    "test-username",
 		DisplayName: "test-display-name",
 	}
@@ -106,10 +105,6 @@ func testSaveAndGet(t *testing.T, repo UserRepository) {
 		t.Fatalf("Failed to get user by ID: %v", err)
 	}
 
-	if savedUser.DiscordID != user.DiscordID {
-		t.Errorf("Expected DiscordID %s, got %s", user.DiscordID, savedUser.DiscordID)
-	}
-
 	if savedUser.Username != user.Username {
 		t.Errorf("Expected Username %s, got %s", user.Username, savedUser.Username)
 	}
@@ -119,19 +114,22 @@ func testSaveAndGet(t *testing.T, repo UserRepository) {
 	}
 }
 
-func testGetByDiscordID(t *testing.T, repo UserRepository) {
+func testGetByExternalID(t *testing.T, repo UserRepository) {
 	user := &user{
-		ID:        "test-id",
-		DiscordID: "test-discord-id",
+		ID: "test-id",
 	}
 
 	if err := repo.Save(user); err != nil {
 		t.Fatalf("Failed to save user: %v", err)
 	}
 
-	savedUser, err := repo.GetByDiscordID(user.DiscordID)
+	if err := repo.AddIdentity(user.ID, "discord", "test-discord-id"); err != nil {
+		t.Fatalf("Failed to add identity: %v", err)
+	}
+
+	savedUser, err := repo.GetByExternalID("discord", "test-discord-id")
 	if err != nil {
-		t.Fatalf("Failed to get user by Discord ID: %v", err)
+		t.Fatalf("Failed to get user by External ID: %v", err)
 	}
 
 	if savedUser.ID != user.ID {
@@ -142,8 +140,7 @@ func testGetByDiscordID(t *testing.T, repo UserRepository) {
 // testDelete tests deleting a user by DiscordID.
 func testDelete(t *testing.T, repo UserRepository) {
 	user := &user{
-		ID:        "test-id",
-		DiscordID: "test-discord-id",
+		ID: "test-id",
 	}
 
 	// Save the user first
@@ -151,19 +148,23 @@ func testDelete(t *testing.T, repo UserRepository) {
 		t.Fatalf("Failed to save user: %v", err)
 	}
 
+	if err := repo.AddIdentity(user.ID, "discord", "test-discord-id"); err != nil {
+		t.Fatalf("Failed to add identity: %v", err)
+	}
+
 	// Ensure user exists before deletion
-	_, err := repo.GetByDiscordID(user.DiscordID)
+	_, err := repo.GetByExternalID("discord", "test-discord-id")
 	if err != nil {
-		t.Fatalf("Failed to get user by DiscordID before deletion: %v", err)
+		t.Fatalf("Failed to get user by ExternalID before deletion: %v", err)
 	}
 
 	// Delete the user
-	if err := repo.Delete(user.DiscordID); err != nil {
+	if err := repo.Delete(user.ID); err != nil {
 		t.Fatalf("Failed to delete user: %v", err)
 	}
 
 	// Assert that the user no longer exists
-	_, err = repo.GetByDiscordID(user.DiscordID)
+	_, err = repo.GetByExternalID("discord", "test-discord-id")
 	if err == nil {
 		t.Fatal("Expected error when getting deleted user, got none")
 	}

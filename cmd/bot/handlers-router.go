@@ -77,11 +77,11 @@ func (bot *Bot) handleButtonPresses(s *discordgo.Session, i *discordgo.Interacti
 
 	userDiscordID := i.Member.User.ID
 
-	user, getUserErr := bot.UserService.GetUserByDiscordID(userDiscordID)
+	user, getUserErr := bot.UserService.GetUserByExternalID("discord", userDiscordID)
 	if getUserErr != nil {
 		if errors.Is(getUserErr, users.ErrUserNotFound) {
 			var createUserErr error
-			user, createUserErr = bot.UserService.CreateUser(userDiscordID)
+			user, createUserErr = bot.UserService.CreateUser("discord", userDiscordID)
 			if createUserErr != nil {
 				log.Printf("Error creating user: %v", createUserErr)
 				return

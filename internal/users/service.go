@@ -19,10 +19,9 @@ func NewService(userRepo UserRepository, betService bets.BetService) UserService
 	}
 }
 
-func (service service) CreateUser(discordID string) (User, error) {
+func (service service) CreateUser(provider, externalID string) (User, error) {
 	user := &user{
-		ID:        uuid.NewString(),
-		DiscordID: discordID,
+		ID: uuid.NewString(),
 	}
 
 	err := service.userRepo.Save(user)
@@ -30,11 +29,16 @@ func (service service) CreateUser(discordID string) (User, error) {
 		return nil, fmt.Errorf("could not save user: %w", err)
 	}
 
+	err = service.userRepo.AddIdentity(user.ID, provider, externalID)
+	if err != nil {
+		return nil, fmt.Errorf("could not add identity: %w", err)
+	}
+
 	return user, nil
 }
 
-func (service service) GetUserByDiscordID(discordID string) (User, error) {
-	user, userErr := service.userRepo.GetByDiscordID(discordID)
+func (service service) GetUserByExternalID(provider, externalID string) (User, error) {
+	user, userErr := service.userRepo.GetByExternalID(provider, externalID)
 	if userErr != nil {
 		return nil, userErr
 	}
@@ -42,8 +46,13 @@ func (service service) GetUserByDiscordID(discordID string) (User, error) {
 	return user, nil
 }
 
-func (service service) DeleteUser(discordID string) error {
-	err := service.userRepo.Delete(discordID)
+func (service service) DeleteUser(provider, externalID string) error {
+	user, err := service.userRepo.GetByExternalID(provider, externalID)
+	if err != nil {
+		return fmt.Errorf("could not find user to delete: %w", err)
+	}
+
+	err = service.userRepo.Delete(user.ID)
 	if err != nil {
 		return fmt.Errorf("could not delete user: %w", err)
 	}

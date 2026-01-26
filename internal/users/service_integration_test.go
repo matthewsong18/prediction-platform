@@ -108,7 +108,7 @@ func testWinLoss(t *testing.T, betsToReturn []bets.Bet, expectedWinLoss *WinLoss
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, mockBets)
 
-	user, err := userService.CreateUser("test-discord-id")
+	user, err := userService.CreateUser("discord", "test-discord-id")
 	if err != nil {
 		t.Fatalf("Setup failed: could not create user: %v", err)
 	}
