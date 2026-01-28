@@ -76,10 +76,17 @@ func buildSchema() []string {
 		);`,
 		`CREATE TABLE IF NOT EXISTS users (
 			id TEXT PRIMARY KEY,
-			discord_id TEXT,
-			discord_id_hash TEXT UNIQUE,
 			username TEXT,
 			display_name TEXT
 		);`,
+		`CREATE TABLE IF NOT EXISTS user_identities (
+			provider TEXT,
+			external_id TEXT,
+			external_id_hash TEXT,
+			user_id TEXT,
+			PRIMARY KEY (provider, external_id_hash),
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+		);`,
+		`CREATE INDEX IF NOT EXISTS idx_identities_hash ON user_identities(provider, external_id_hash);`,
 	}
 }

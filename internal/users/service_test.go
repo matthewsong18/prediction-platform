@@ -16,29 +16,38 @@ func TestCreateUser(t *testing.T) {
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, betService)
 
-	user, err := userService.CreateUser("12345")
+	identity := Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
+
+	user, err := userService.CreateUser(identity)
 	if err != nil {
 		t.Fatalf("CreateUser returned an unexpected error: %v", err)
 	}
 
-	if user.GetDiscordID() != "12345" {
-		t.Errorf("Expected DiscordID to be '12345', got '%s'", user.GetDiscordID())
+	if user.GetID() == "" {
+		t.Error("Expected ID to be set")
 	}
 }
 
-func TestGetUserByDiscordID(t *testing.T) {
+func TestGetUserByExternalID(t *testing.T) {
 	t.Parallel()
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, nil)
 
-	user, err := userService.CreateUser("12345")
+	identity := Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
+	user, err := userService.CreateUser(identity)
 	if err != nil {
 		t.Fatalf("CreateUser returned an unexpected error: %v", err)
 	}
 
-	retrievedUser, err := userService.GetUserByDiscordID("12345")
+	retrievedUser, err := userService.GetUserByExternalID(identity)
 	if err != nil {
-		t.Fatalf("GetUserByDiscordID returned an unexpected error: %v", err)
+		t.Fatalf("GetUserByExternalID returned an unexpected error: %v", err)
 	}
 
 	if retrievedUser.GetID() != user.GetID() {
@@ -51,22 +60,26 @@ func TestDeleteUser(t *testing.T) {
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, nil)
 
-	user, err := userService.CreateUser("12345")
+	identity := Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
+	_, err := userService.CreateUser(identity)
 	if err != nil {
 		t.Fatalf("CreateUser returned an unexpected error: %v", err)
 	}
 
-	err = userService.DeleteUser(user.GetDiscordID())
+	err = userService.DeleteUser(identity)
 	if err != nil {
 		t.Fatalf("DeleteUser returned an unexpected error: %v", err)
 	}
 
-	_, err = userService.GetUserByDiscordID(user.GetDiscordID())
+	_, err = userService.GetUserByExternalID(identity)
 	if err == nil {
-		t.Fatalf("Expected GetUserByDiscordID to return an error after deletion")
+		t.Fatalf("Expected GetUserByExternalID to return an error after deletion")
 	}
 
 	if errors.Is(err, ErrUserNotFound) {
-		t.Fatalf("Expected GetUserByDiscordID to return ErrUserNotFound after deletion")
+		t.Fatalf("Expected GetUserByExternalID to return ErrUserNotFound after deletion")
 	}
 }

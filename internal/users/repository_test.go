@@ -65,9 +65,10 @@ func TestUserRepositoryImplementations(t *testing.T) {
 	}
 
 	tests := map[string]func(t *testing.T, repo UserRepository){
-		"it should save then get a user":           testSaveAndGet,
-		"it should get a user by their discord ID": testGetByDiscordID,
-		"it should delete a user":                  testDelete,
+		"it should save then get a user":            testSaveAndGet,
+		"it should get a user by their external ID": testGetByExternalID,
+		"it should delete a user":                   testDelete,
+		"it should save the user atomically":        testSaveUserIsAtomicTransaction,
 	}
 
 	for _, implementation := range implementations {
@@ -92,22 +93,21 @@ func TestUserRepositoryImplementations(t *testing.T) {
 func testSaveAndGet(t *testing.T, repo UserRepository) {
 	user := &user{
 		ID:          "test-id",
-		DiscordID:   "test-discord-id",
 		Username:    "test-username",
 		DisplayName: "test-display-name",
 	}
+	identity := &Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
 
-	if err := repo.Save(user); err != nil {
+	if err := repo.Save(user, identity); err != nil {
 		t.Fatalf("Failed to save user: %v", err)
 	}
 
 	savedUser, err := repo.GetByID(user.ID)
 	if err != nil {
 		t.Fatalf("Failed to get user by ID: %v", err)
-	}
-
-	if savedUser.DiscordID != user.DiscordID {
-		t.Errorf("Expected DiscordID %s, got %s", user.DiscordID, savedUser.DiscordID)
 	}
 
 	if savedUser.Username != user.Username {
@@ -119,19 +119,22 @@ func testSaveAndGet(t *testing.T, repo UserRepository) {
 	}
 }
 
-func testGetByDiscordID(t *testing.T, repo UserRepository) {
+func testGetByExternalID(t *testing.T, repo UserRepository) {
 	user := &user{
-		ID:        "test-id",
-		DiscordID: "test-discord-id",
+		ID: "test-id",
+	}
+	identity := &Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
 	}
 
-	if err := repo.Save(user); err != nil {
+	if err := repo.Save(user, identity); err != nil {
 		t.Fatalf("Failed to save user: %v", err)
 	}
 
-	savedUser, err := repo.GetByDiscordID(user.DiscordID)
+	savedUser, err := repo.GetByExternalID(identity)
 	if err != nil {
-		t.Fatalf("Failed to get user by Discord ID: %v", err)
+		t.Fatalf("Failed to get user by External ID: %v", err)
 	}
 
 	if savedUser.ID != user.ID {
@@ -139,32 +142,72 @@ func testGetByDiscordID(t *testing.T, repo UserRepository) {
 	}
 }
 
-// testDelete tests deleting a user by DiscordID.
+// testDelete tests deleting a user
 func testDelete(t *testing.T, repo UserRepository) {
 	user := &user{
-		ID:        "test-id",
-		DiscordID: "test-discord-id",
+		ID: "test-id",
+	}
+	identity := &Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
 	}
 
 	// Save the user first
-	if err := repo.Save(user); err != nil {
+	if err := repo.Save(user, identity); err != nil {
 		t.Fatalf("Failed to save user: %v", err)
 	}
 
 	// Ensure user exists before deletion
-	_, err := repo.GetByDiscordID(user.DiscordID)
+	_, err := repo.GetByExternalID(identity)
 	if err != nil {
-		t.Fatalf("Failed to get user by DiscordID before deletion: %v", err)
+		t.Fatalf("Failed to get user by ExternalID before deletion: %v", err)
 	}
 
 	// Delete the user
-	if err := repo.Delete(user.DiscordID); err != nil {
+	if err := repo.Delete(user.ID); err != nil {
 		t.Fatalf("Failed to delete user: %v", err)
 	}
 
 	// Assert that the user no longer exists
-	_, err = repo.GetByDiscordID(user.DiscordID)
+	_, err = repo.GetByExternalID(identity)
 	if err == nil {
 		t.Fatal("Expected error when getting deleted user, got none")
+	}
+}
+
+func testSaveUserIsAtomicTransaction(t *testing.T, repo UserRepository) {
+	// Creating a random user to occupy the identity
+	blockingUser := &user{
+		ID: "blocker",
+	}
+	identity := &Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
+
+	if err := repo.Save(blockingUser, identity); err != nil {
+		t.Fatalf("Failed to save setup blocking user: %v", err)
+	}
+
+	startingUserCount, err := repo.getUserCount()
+	if err != nil {
+		t.Fatalf("Failed to count users: %v", err)
+	}
+
+	// Trying to save a different user with the same identity
+	testUser := &user{
+		ID: "new user",
+	}
+	if err := repo.Save(testUser, identity); err == nil {
+		t.Fatal("Didn't fail on already used identity")
+	}
+
+	endingUserCount, err := repo.getUserCount()
+	if err != nil {
+		t.Fatalf("Failed to count users: %v", err)
+	}
+
+	if startingUserCount != endingUserCount {
+		t.Fatal("SaveUser is not atomic")
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"betting-discord-bot/internal/bets"
+
 	"github.com/google/uuid"
 )
 
@@ -108,7 +109,12 @@ func testWinLoss(t *testing.T, betsToReturn []bets.Bet, expectedWinLoss *WinLoss
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, mockBets)
 
-	user, err := userService.CreateUser("test-discord-id")
+	identity := &Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
+
+	user, err := userService.CreateUser(*identity)
 	if err != nil {
 		t.Fatalf("Setup failed: could not create user: %v", err)
 	}

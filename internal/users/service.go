@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"betting-discord-bot/internal/bets"
+
 	"github.com/google/uuid"
 )
 
@@ -19,13 +20,12 @@ func NewService(userRepo UserRepository, betService bets.BetService) UserService
 	}
 }
 
-func (service service) CreateUser(discordID string) (User, error) {
+func (service service) CreateUser(identity Identity) (User, error) {
 	user := &user{
-		ID:        uuid.NewString(),
-		DiscordID: discordID,
+		ID: uuid.NewString(),
 	}
 
-	err := service.userRepo.Save(user)
+	err := service.userRepo.Save(user, &identity)
 	if err != nil {
 		return nil, fmt.Errorf("could not save user: %w", err)
 	}
@@ -33,8 +33,8 @@ func (service service) CreateUser(discordID string) (User, error) {
 	return user, nil
 }
 
-func (service service) GetUserByDiscordID(discordID string) (User, error) {
-	user, userErr := service.userRepo.GetByDiscordID(discordID)
+func (service service) GetUserByExternalID(identity Identity) (User, error) {
+	user, userErr := service.userRepo.GetByExternalID(&identity)
 	if userErr != nil {
 		return nil, userErr
 	}
@@ -42,8 +42,13 @@ func (service service) GetUserByDiscordID(discordID string) (User, error) {
 	return user, nil
 }
 
-func (service service) DeleteUser(discordID string) error {
-	err := service.userRepo.Delete(discordID)
+func (service service) DeleteUser(identity Identity) error {
+	user, err := service.userRepo.GetByExternalID(&identity)
+	if err != nil {
+		return fmt.Errorf("could not find user to delete: %w", err)
+	}
+
+	err = service.userRepo.Delete(user.ID)
 	if err != nil {
 		return fmt.Errorf("could not delete user: %w", err)
 	}
