@@ -4,21 +4,21 @@ import "errors"
 
 type UserService interface {
 	// CreateUser creates a new internal user and links it to the given provider identity.
-	CreateUser(provider, externalID string) (User, error)
-	// GetUserByExternalID finds a user by their provider identity (e.g., "discord", "123").
-	GetUserByExternalID(provider, externalID string) (User, error)
+	CreateUser(identity Identity) (User, error)
+	// GetUserByExternalID finds a user by their provider identity
+	GetUserByExternalID(identity Identity) (User, error)
 	// DeleteUser deletes the user and all associated identities.
 	// For now, we still trigger this via a specific provider identity.
-	DeleteUser(provider, externalID string) error
+	DeleteUser(identity Identity) error
 	GetWinLoss(userID string) (*WinLoss, error)
 }
 
 type UserRepository interface {
-	Save(user *user, provider, externalID string) error
+	Save(user *user, identity *Identity) error
 	// AddIdentity links an external identity to an existing user.
-	AddIdentity(userID, provider, externalID string) error
+	AddIdentity(userID string, identity *Identity) error
 	GetByID(id string) (*user, error)
-	GetByExternalID(provider, externalID string) (*user, error)
+	GetByExternalID(identity *Identity) (*user, error)
 	// Delete deletes the user and their identities.
 	// The implementation should handle the cascade or multi-table deletion.
 	Delete(userID string) error

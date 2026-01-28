@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"betting-discord-bot/internal/users"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -77,11 +78,16 @@ func (bot *Bot) handleButtonPresses(s *discordgo.Session, i *discordgo.Interacti
 
 	userDiscordID := i.Member.User.ID
 
-	user, getUserErr := bot.UserService.GetUserByExternalID("discord", userDiscordID)
+	identity := users.Identity{
+		Provider:   "discord",
+		ExternalID: userDiscordID,
+	}
+
+	user, getUserErr := bot.UserService.GetUserByExternalID(identity)
 	if getUserErr != nil {
 		if errors.Is(getUserErr, users.ErrUserNotFound) {
 			var createUserErr error
-			user, createUserErr = bot.UserService.CreateUser("discord", userDiscordID)
+			user, createUserErr = bot.UserService.CreateUser(identity)
 			if createUserErr != nil {
 				log.Printf("Error creating user: %v", createUserErr)
 				return

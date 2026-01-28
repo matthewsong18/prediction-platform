@@ -16,7 +16,7 @@ func NewLibSQLRepository(db *sql.DB, cryptoService cryptography.CryptoService) U
 	return &libsqlRepository{db, cryptoService}
 }
 
-func (repo *libsqlRepository) Save(user *user, provider, externalID string) error {
+func (repo *libsqlRepository) Save(user *user, identity *Identity) error {
 	// Encrypt sensitive data before saving
 	encryptedUsername, err := repo.cryptoService.Encrypt(user.Username)
 	if err != nil {
@@ -43,16 +43,16 @@ func (repo *libsqlRepository) Save(user *user, provider, externalID string) erro
 		return fmt.Errorf("error saving user: %w", err)
 	}
 
-	encryptedExternalID, err := repo.cryptoService.Encrypt(externalID)
+	encryptedExternalID, err := repo.cryptoService.Encrypt(identity.ExternalID)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt external_id: %w", err)
 	}
 
-	externalIDHash := repo.cryptoService.GenerateBlindIndex(externalID)
+	externalIDHash := repo.cryptoService.GenerateBlindIndex(identity.ExternalID)
 
 	identityQuery := `INSERT INTO user_identities (provider, external_id, external_id_hash, user_id) VALUES (?, ?, ?, ?)`
 
-	_, err = transaction.Exec(identityQuery, provider, encryptedExternalID, externalIDHash, user.ID)
+	_, err = transaction.Exec(identityQuery, identity.Provider, encryptedExternalID, externalIDHash, user.ID)
 	if err != nil {
 		return fmt.Errorf("error saving identity: %w", err)
 	}
@@ -60,17 +60,17 @@ func (repo *libsqlRepository) Save(user *user, provider, externalID string) erro
 	return transaction.Commit()
 }
 
-func (repo *libsqlRepository) AddIdentity(userID, provider, externalID string) error {
-	encryptedExternalID, err := repo.cryptoService.Encrypt(externalID)
+func (repo *libsqlRepository) AddIdentity(userID string, identity *Identity) error {
+	encryptedExternalID, err := repo.cryptoService.Encrypt(identity.ExternalID)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt external_id: %w", err)
 	}
 
-	externalIDHash := repo.cryptoService.GenerateBlindIndex(externalID)
+	externalIDHash := repo.cryptoService.GenerateBlindIndex(identity.ExternalID)
 
 	query := `INSERT INTO user_identities (provider, external_id, external_id_hash, user_id) VALUES (?, ?, ?, ?)`
 
-	_, err = repo.db.Exec(query, provider, encryptedExternalID, externalIDHash, userID)
+	_, err = repo.db.Exec(query, identity.Provider, encryptedExternalID, externalIDHash, userID)
 	if err != nil {
 		return fmt.Errorf("error saving identity: %w", err)
 	}
@@ -106,16 +106,16 @@ func (repo *libsqlRepository) GetByID(id string) (*user, error) {
 	return &u, nil
 }
 
-func (repo *libsqlRepository) GetByExternalID(provider, externalID string) (*user, error) {
+func (repo *libsqlRepository) GetByExternalID(identity *Identity) (*user, error) {
 	// Search by blind index (hash)
-	externalIDHash := repo.cryptoService.GenerateBlindIndex(externalID)
+	externalIDHash := repo.cryptoService.GenerateBlindIndex(identity.ExternalID)
 
 	query := `SELECT u.id, u.username, u.display_name, ui.external_id
               FROM users u
               JOIN user_identities ui ON u.id = ui.user_id
               WHERE ui.provider = ? AND ui.external_id_hash = ?`
 
-	row := repo.db.QueryRow(query, provider, externalIDHash)
+	row := repo.db.QueryRow(query, identity.Provider, externalIDHash)
 
 	var retrievedUser user
 	var encryptedExternalID, encryptedUsername, encryptedDisplayName string
@@ -132,7 +132,7 @@ func (repo *libsqlRepository) GetByExternalID(provider, externalID string) (*use
 	if err != nil {
 		return nil, fmt.Errorf("failed to decrypt external_id: %w", err)
 	}
-	if decryptedExternalID != externalID {
+	if decryptedExternalID != identity.ExternalID {
 		return nil, ErrUserNotFound
 	}
 

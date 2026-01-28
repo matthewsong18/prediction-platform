@@ -16,7 +16,12 @@ func TestCreateUser(t *testing.T) {
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, betService)
 
-	user, err := userService.CreateUser("discord", "12345")
+	identity := Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
+
+	user, err := userService.CreateUser(identity)
 	if err != nil {
 		t.Fatalf("CreateUser returned an unexpected error: %v", err)
 	}
@@ -31,12 +36,16 @@ func TestGetUserByExternalID(t *testing.T) {
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, nil)
 
-	user, err := userService.CreateUser("discord", "12345")
+	identity := Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
+	user, err := userService.CreateUser(identity)
 	if err != nil {
 		t.Fatalf("CreateUser returned an unexpected error: %v", err)
 	}
 
-	retrievedUser, err := userService.GetUserByExternalID("discord", "12345")
+	retrievedUser, err := userService.GetUserByExternalID(identity)
 	if err != nil {
 		t.Fatalf("GetUserByExternalID returned an unexpected error: %v", err)
 	}
@@ -51,17 +60,21 @@ func TestDeleteUser(t *testing.T) {
 	userRepo := NewMemoryRepository()
 	userService := NewService(userRepo, nil)
 
-	_, err := userService.CreateUser("discord", "12345")
+	identity := Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
+	_, err := userService.CreateUser(identity)
 	if err != nil {
 		t.Fatalf("CreateUser returned an unexpected error: %v", err)
 	}
 
-	err = userService.DeleteUser("discord", "12345")
+	err = userService.DeleteUser(identity)
 	if err != nil {
 		t.Fatalf("DeleteUser returned an unexpected error: %v", err)
 	}
 
-	_, err = userService.GetUserByExternalID("discord", "12345")
+	_, err = userService.GetUserByExternalID(identity)
 	if err == nil {
 		t.Fatalf("Expected GetUserByExternalID to return an error after deletion")
 	}

@@ -96,8 +96,12 @@ func testSaveAndGet(t *testing.T, repo UserRepository) {
 		Username:    "test-username",
 		DisplayName: "test-display-name",
 	}
+	identity := &Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
 
-	if err := repo.Save(user, "test-provider", "test-external-id"); err != nil {
+	if err := repo.Save(user, identity); err != nil {
 		t.Fatalf("Failed to save user: %v", err)
 	}
 
@@ -119,12 +123,16 @@ func testGetByExternalID(t *testing.T, repo UserRepository) {
 	user := &user{
 		ID: "test-id",
 	}
+	identity := &Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
 
-	if err := repo.Save(user, "test-provider", "test-external-id"); err != nil {
+	if err := repo.Save(user, identity); err != nil {
 		t.Fatalf("Failed to save user: %v", err)
 	}
 
-	savedUser, err := repo.GetByExternalID("test-provider", "test-external-id")
+	savedUser, err := repo.GetByExternalID(identity)
 	if err != nil {
 		t.Fatalf("Failed to get user by External ID: %v", err)
 	}
@@ -139,14 +147,18 @@ func testDelete(t *testing.T, repo UserRepository) {
 	user := &user{
 		ID: "test-id",
 	}
+	identity := &Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
 
 	// Save the user first
-	if err := repo.Save(user, "test-provider", "test-external-id"); err != nil {
+	if err := repo.Save(user, identity); err != nil {
 		t.Fatalf("Failed to save user: %v", err)
 	}
 
 	// Ensure user exists before deletion
-	_, err := repo.GetByExternalID("test-provider", "test-external-id")
+	_, err := repo.GetByExternalID(identity)
 	if err != nil {
 		t.Fatalf("Failed to get user by ExternalID before deletion: %v", err)
 	}
@@ -157,7 +169,7 @@ func testDelete(t *testing.T, repo UserRepository) {
 	}
 
 	// Assert that the user no longer exists
-	_, err = repo.GetByExternalID("test-provider", "test-external-id")
+	_, err = repo.GetByExternalID(identity)
 	if err == nil {
 		t.Fatal("Expected error when getting deleted user, got none")
 	}
@@ -168,7 +180,12 @@ func testSaveUserIsAtomicTransaction(t *testing.T, repo UserRepository) {
 	blockingUser := &user{
 		ID: "blocker",
 	}
-	if err := repo.Save(blockingUser, "test-provider", "blocking-id"); err != nil {
+	identity := &Identity{
+		Provider:   "test-provider",
+		ExternalID: "test-external-id",
+	}
+
+	if err := repo.Save(blockingUser, identity); err != nil {
 		t.Fatalf("Failed to save setup blocking user: %v", err)
 	}
 
@@ -181,7 +198,7 @@ func testSaveUserIsAtomicTransaction(t *testing.T, repo UserRepository) {
 	testUser := &user{
 		ID: "new user",
 	}
-	if err := repo.Save(testUser, "test-provider", "blocking-id"); err == nil {
+	if err := repo.Save(testUser, identity); err == nil {
 		t.Fatal("Didn't fail on already used identity")
 	}
 

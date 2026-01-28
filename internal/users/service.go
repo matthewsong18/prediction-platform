@@ -20,12 +20,12 @@ func NewService(userRepo UserRepository, betService bets.BetService) UserService
 	}
 }
 
-func (service service) CreateUser(provider, externalID string) (User, error) {
+func (service service) CreateUser(identity Identity) (User, error) {
 	user := &user{
 		ID: uuid.NewString(),
 	}
 
-	err := service.userRepo.Save(user, provider, externalID)
+	err := service.userRepo.Save(user, &identity)
 	if err != nil {
 		return nil, fmt.Errorf("could not save user: %w", err)
 	}
@@ -33,8 +33,8 @@ func (service service) CreateUser(provider, externalID string) (User, error) {
 	return user, nil
 }
 
-func (service service) GetUserByExternalID(provider, externalID string) (User, error) {
-	user, userErr := service.userRepo.GetByExternalID(provider, externalID)
+func (service service) GetUserByExternalID(identity Identity) (User, error) {
+	user, userErr := service.userRepo.GetByExternalID(&identity)
 	if userErr != nil {
 		return nil, userErr
 	}
@@ -42,8 +42,8 @@ func (service service) GetUserByExternalID(provider, externalID string) (User, e
 	return user, nil
 }
 
-func (service service) DeleteUser(provider, externalID string) error {
-	user, err := service.userRepo.GetByExternalID(provider, externalID)
+func (service service) DeleteUser(identity Identity) error {
+	user, err := service.userRepo.GetByExternalID(&identity)
 	if err != nil {
 		return fmt.Errorf("could not find user to delete: %w", err)
 	}

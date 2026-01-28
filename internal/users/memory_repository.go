@@ -16,12 +16,12 @@ func NewMemoryRepository() UserRepository {
 	}
 }
 
-func (repo *memoryRepository) Save(user *user, provider, externalID string) error {
+func (repo *memoryRepository) Save(user *user, identity *Identity) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
 
-	key := provider + ":" + externalID
+	key := identity.Provider + ":" + identity.ExternalID
 	if _, exists := repo.identities[key]; exists {
 		return errors.New("identity has been taken")
 	}
@@ -32,12 +32,12 @@ func (repo *memoryRepository) Save(user *user, provider, externalID string) erro
 	return nil
 }
 
-func (repo *memoryRepository) AddIdentity(userID, provider, externalID string) error {
+func (repo *memoryRepository) AddIdentity(userID string, identity *Identity) error {
 	if _, exists := repo.users[userID]; !exists {
 		return errors.New("user not found")
 	}
 
-	key := provider + ":" + externalID
+	key := identity.Provider + ":" + identity.ExternalID
 	if _, exists := repo.identities[key]; exists {
 		return errors.New("identity has been taken")
 	}
@@ -54,8 +54,8 @@ func (repo *memoryRepository) GetByID(id string) (*user, error) {
 	return user, nil
 }
 
-func (repo *memoryRepository) GetByExternalID(provider, externalID string) (*user, error) {
-	key := provider + ":" + externalID
+func (repo *memoryRepository) GetByExternalID(identity *Identity) (*user, error) {
+	key := identity.Provider + ":" + identity.ExternalID
 	userID, exists := repo.identities[key]
 	if !exists {
 		return nil, errors.New("user not found")

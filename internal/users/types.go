@@ -20,3 +20,8 @@ type WinLoss struct {
 	Wins   int
 	Losses int
 }
+
+type Identity struct {
+	Provider   string
+	ExternalID string
+}
