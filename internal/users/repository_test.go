@@ -68,6 +68,7 @@ func TestUserRepositoryImplementations(t *testing.T) {
 		"it should save then get a user":            testSaveAndGet,
 		"it should get a user by their external ID": testGetByExternalID,
 		"it should delete a user":                   testDelete,
+		"it should save the user atomically":        testSaveUserIsAtomicTransaction,
 	}
 
 	for _, implementation := range implementations {
@@ -159,5 +160,37 @@ func testDelete(t *testing.T, repo UserRepository) {
 	_, err = repo.GetByExternalID("test-provider", "test-external-id")
 	if err == nil {
 		t.Fatal("Expected error when getting deleted user, got none")
+	}
+}
+
+func testSaveUserIsAtomicTransaction(t *testing.T, repo UserRepository) {
+	// Creating a random user to occupy the identity
+	blockingUser := &user{
+		ID: "blocker",
+	}
+	if err := repo.Save(blockingUser, "test-provider", "blocking-id"); err != nil {
+		t.Fatalf("Failed to save setup blocking user: %v", err)
+	}
+
+	startingUserCount, err := repo.getUserCount()
+	if err != nil {
+		t.Fatalf("Failed to count users: %v", err)
+	}
+
+	// Trying to save a different user with the same identity
+	testUser := &user{
+		ID: "new user",
+	}
+	if err := repo.Save(testUser, "test-provider", "blocking-id"); err == nil {
+		t.Fatal("Didn't fail on already used identity")
+	}
+
+	endingUserCount, err := repo.getUserCount()
+	if err != nil {
+		t.Fatalf("Failed to count users: %v", err)
+	}
+
+	if startingUserCount != endingUserCount {
+		t.Fatal("SaveUser is not atomic")
 	}
 }

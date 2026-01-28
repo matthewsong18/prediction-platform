@@ -22,6 +22,10 @@ type UserRepository interface {
 	// Delete deletes the user and their identities.
 	// The implementation should handle the cascade or multi-table deletion.
 	Delete(userID string) error
+
+	// Private testing methods
+
+	getUserCount() (int, error)
 }
 
 var ErrUserNotFound = errors.New("user not found")

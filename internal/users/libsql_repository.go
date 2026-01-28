@@ -173,4 +173,17 @@ func (repo *libsqlRepository) Delete(userID string) error {
 	return nil
 }
 
+func (repo *libsqlRepository) getUserCount() (int, error) {
+	query := "SELECT COUNT(*) FROM users"
+	row := repo.db.QueryRow(query)
+
+	var count int
+	err := row.Scan(&count)
+	if err != nil {
+		return -1, fmt.Errorf("error scanning query row result: %w", err)
+	}
+
+	return count, nil
+}
+
 var _ UserRepository = (*libsqlRepository)(nil)

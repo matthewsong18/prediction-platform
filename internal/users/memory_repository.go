@@ -74,4 +74,8 @@ func (repo *memoryRepository) Delete(userID string) error {
 	return nil
 }
 
+func (repo *memoryRepository) getUserCount() (int, error) {
+	return len(repo.users), nil
+}
+
 var _ UserRepository = (*memoryRepository)(nil)
