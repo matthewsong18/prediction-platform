@@ -28,13 +28,17 @@ func (repo *libsqlRepository) Save(user *user, provider, externalID string) erro
 		return fmt.Errorf("failed to encrypt display_name: %w", err)
 	}
 
-	userQuery := `INSERT INTO users (id, username, display_name)
-              VALUES (?, ?, ?)
-              ON CONFLICT(id) DO UPDATE SET
-              username = excluded.username,
-              display_name = excluded.display_name`
+	// Start a transaction
+	transaction, err := repo.db.Begin()
+	if err != nil {
+		return err
+	}
 
-	_, err = repo.db.Exec(userQuery, user.ID, encryptedUsername, encryptedDisplayName)
+	defer transaction.Rollback()
+
+	userQuery := `INSERT INTO users (id, username, display_name) VALUES (?, ?, ?)`
+
+	_, err = transaction.Exec(userQuery, user.ID, encryptedUsername, encryptedDisplayName)
 	if err != nil {
 		return fmt.Errorf("error saving user: %w", err)
 	}
@@ -46,18 +50,14 @@ func (repo *libsqlRepository) Save(user *user, provider, externalID string) erro
 
 	externalIDHash := repo.cryptoService.GenerateBlindIndex(externalID)
 
-	identityQuery := `INSERT INTO user_identities (provider, external_id, external_id_hash, user_id)
-              VALUES (?, ?, ?, ?)
-              ON CONFLICT(provider, external_id) DO UPDATE SET
-              external_id_hash = excluded.external_id_hash,
-              user_id = excluded.user_id`
+	identityQuery := `INSERT INTO user_identities (provider, external_id, external_id_hash, user_id) VALUES (?, ?, ?, ?)`
 
-	_, err = repo.db.Exec(identityQuery, provider, encryptedExternalID, externalIDHash, user.ID)
+	_, err = transaction.Exec(identityQuery, provider, encryptedExternalID, externalIDHash, user.ID)
 	if err != nil {
 		return fmt.Errorf("error saving identity: %w", err)
 	}
 
-	return nil
+	return transaction.Commit()
 }
 
 func (repo *libsqlRepository) AddIdentity(userID, provider, externalID string) error {
@@ -68,11 +68,7 @@ func (repo *libsqlRepository) AddIdentity(userID, provider, externalID string) e
 
 	externalIDHash := repo.cryptoService.GenerateBlindIndex(externalID)
 
-	query := `INSERT INTO user_identities (provider, external_id, external_id_hash, user_id)
-              VALUES (?, ?, ?, ?)
-              ON CONFLICT(provider, external_id) DO UPDATE SET
-              external_id_hash = excluded.external_id_hash,
-              user_id = excluded.user_id`
+	query := `INSERT INTO user_identities (provider, external_id, external_id_hash, user_id) VALUES (?, ?, ?, ?)`
 
 	_, err = repo.db.Exec(query, provider, encryptedExternalID, externalIDHash, userID)
 	if err != nil {

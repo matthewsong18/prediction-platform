@@ -84,7 +84,7 @@ func buildSchema() []string {
 			external_id TEXT,
 			external_id_hash TEXT,
 			user_id TEXT,
-			PRIMARY KEY (provider, external_id),
+			PRIMARY KEY (provider, external_id_hash),
 			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 		);`,
 		`CREATE INDEX IF NOT EXISTS idx_identities_hash ON user_identities(provider, external_id_hash);`,
