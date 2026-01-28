@@ -1,6 +1,8 @@
 package users
 
-import "errors"
+import (
+	"errors"
+)
 
 type memoryRepository struct {
 	users      map[string]*user
@@ -14,12 +16,19 @@ func NewMemoryRepository() UserRepository {
 	}
 }
 
-func (repo *memoryRepository) Save(user *user) error {
+func (repo *memoryRepository) Save(user *user, provider, externalID string) error {
 	if user == nil {
 		return errors.New("user is nil")
 	}
 
+	key := provider + ":" + externalID
+	if _, exists := repo.identities[key]; exists {
+		return errors.New("identity has been taken")
+	}
+
 	repo.users[user.ID] = user
+	repo.identities[key] = user.ID
+
 	return nil
 }
 

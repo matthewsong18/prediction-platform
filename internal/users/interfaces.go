@@ -14,7 +14,7 @@ type UserService interface {
 }
 
 type UserRepository interface {
-	Save(user *user) error
+	Save(user *user, provider, externalID string) error
 	// AddIdentity links an external identity to an existing user.
 	AddIdentity(userID, provider, externalID string) error
 	GetByID(id string) (*user, error)

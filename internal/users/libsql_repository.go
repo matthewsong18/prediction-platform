@@ -16,7 +16,7 @@ func NewLibSQLRepository(db *sql.DB, cryptoService cryptography.CryptoService) U
 	return &libsqlRepository{db, cryptoService}
 }
 
-func (repo *libsqlRepository) Save(user *user) error {
+func (repo *libsqlRepository) Save(user *user, provider, externalID string) error {
 	// Encrypt sensitive data before saving
 	encryptedUsername, err := repo.cryptoService.Encrypt(user.Username)
 	if err != nil {
@@ -28,15 +28,33 @@ func (repo *libsqlRepository) Save(user *user) error {
 		return fmt.Errorf("failed to encrypt display_name: %w", err)
 	}
 
-	query := `INSERT INTO users (id, username, display_name) 
+	userQuery := `INSERT INTO users (id, username, display_name)
               VALUES (?, ?, ?)
-              ON CONFLICT(id) DO UPDATE SET 
+              ON CONFLICT(id) DO UPDATE SET
               username = excluded.username,
               display_name = excluded.display_name`
 
-	_, err = repo.db.Exec(query, user.ID, encryptedUsername, encryptedDisplayName)
+	_, err = repo.db.Exec(userQuery, user.ID, encryptedUsername, encryptedDisplayName)
 	if err != nil {
 		return fmt.Errorf("error saving user: %w", err)
+	}
+
+	encryptedExternalID, err := repo.cryptoService.Encrypt(externalID)
+	if err != nil {
+		return fmt.Errorf("failed to encrypt external_id: %w", err)
+	}
+
+	externalIDHash := repo.cryptoService.GenerateBlindIndex(externalID)
+
+	identityQuery := `INSERT INTO user_identities (provider, external_id, external_id_hash, user_id)
+              VALUES (?, ?, ?, ?)
+              ON CONFLICT(provider, external_id) DO UPDATE SET
+              external_id_hash = excluded.external_id_hash,
+              user_id = excluded.user_id`
+
+	_, err = repo.db.Exec(identityQuery, provider, encryptedExternalID, externalIDHash, user.ID)
+	if err != nil {
+		return fmt.Errorf("error saving identity: %w", err)
 	}
 
 	return nil
@@ -96,11 +114,11 @@ func (repo *libsqlRepository) GetByExternalID(provider, externalID string) (*use
 	// Search by blind index (hash)
 	externalIDHash := repo.cryptoService.GenerateBlindIndex(externalID)
 
-	query := `SELECT u.id, u.username, u.display_name, ui.external_id 
+	query := `SELECT u.id, u.username, u.display_name, ui.external_id
               FROM users u
               JOIN user_identities ui ON u.id = ui.user_id
               WHERE ui.provider = ? AND ui.external_id_hash = ?`
-	
+
 	row := repo.db.QueryRow(query, provider, externalIDHash)
 
 	var retrievedUser user

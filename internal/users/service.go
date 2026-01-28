@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"betting-discord-bot/internal/bets"
+
 	"github.com/google/uuid"
 )
 
@@ -24,14 +25,9 @@ func (service service) CreateUser(provider, externalID string) (User, error) {
 		ID: uuid.NewString(),
 	}
 
-	err := service.userRepo.Save(user)
+	err := service.userRepo.Save(user, provider, externalID)
 	if err != nil {
 		return nil, fmt.Errorf("could not save user: %w", err)
-	}
-
-	err = service.userRepo.AddIdentity(user.ID, provider, externalID)
-	if err != nil {
-		return nil, fmt.Errorf("could not add identity: %w", err)
 	}
 
 	return user, nil
